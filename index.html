@@ -412,20 +412,39 @@ if (typeof document !== 'undefined') {
     current = pickQuestion(document.getElementById('selMode').value);
     renderQuestion();
   }
-  function speak(text) {
-    const setStatus = msg => { document.querySelectorAll('.audio-status').forEach(el => { el.textContent = msg; }); };
-    if (!('speechSynthesis' in window)) { setStatus('当前设备不支持语音朗读，请在系统设置里安装泰语语音后重试。'); return false; }
+  const setAudioStatus = msg => { document.querySelectorAll('.audio-status').forEach(el => { el.textContent = msg; }); };
+  const NO_THAI_VOICE_MSG = '没检测到泰语语音：请到系统设置 → 文字转语音输出里安装泰语语音包（首选引擎选带泰语的），装好后重进工具再试。';
+  function thaiVoice() {
     try {
+      const vs = window.speechSynthesis.getVoices();
+      return vs.find(v => v.lang && v.lang.toLowerCase().startsWith('th')) || null;
+    } catch (e) { return null; }
+  }
+  function checkVoiceOnLoad() {
+    if (!('speechSynthesis' in window)) { setAudioStatus('当前设备不支持语音朗读，请在系统设置里安装泰语语音后重试。'); return; }
+    if (!thaiVoice()) setAudioStatus(NO_THAI_VOICE_MSG);
+  }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = checkVoiceOnLoad;
+    setTimeout(checkVoiceOnLoad, 1500);
+  }
+  function speak(text, retried) {
+    if (!('speechSynthesis' in window)) { setAudioStatus('当前设备不支持语音朗读，请在系统设置里安装泰语语音后重试。'); return false; }
+    try {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length && !retried) { setAudioStatus('正在加载语音…'); setTimeout(() => speak(text, true), 800); return false; }
+      const v = thaiVoice();
+      if (!v) { setAudioStatus(NO_THAI_VOICE_MSG); return false; }
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'th-TH';
       u.rate = 0.85;
-      const v = window.speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('th'));
-      if (v) u.voice = v;
+      u.voice = v;
+      u.onerror = () => setAudioStatus('朗读失败：系统泰语语音不可用，请检查系统文字转语音设置。');
       window.speechSynthesis.speak(u);
-      setStatus('');
+      setAudioStatus('');
       return true;
-    } catch (e) { setStatus('朗读失败，请再点一次。'); return false; }
+    } catch (e) { setAudioStatus('朗读失败，请再点一次。'); return false; }
   }
   function playCurrent() { if (current && current.syllable) speak(current.syllable); }
   function startRetry() {

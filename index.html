@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#E07A3F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="声调识记">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23E07A3F'/%3E%3Cg stroke='%23FFF8F0' stroke-width='5' stroke-linecap='round' fill='none'%3E%3Cline x1='20' y1='22' x2='80' y2='22'/%3E%3Cline x1='20' y1='37' x2='80' y2='41'/%3E%3Cline x1='20' y1='50' x2='80' y2='68'/%3E%3Cline x1='20' y1='78' x2='80' y2='74'/%3E%3Cpolyline points='20,90 50,94 80,82'/%3E%3C/g%3E%3C/svg%3E">
+<title>泰语声调小工具 · 内测版</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Noto Sans SC', 'Noto Sans Thai', system-ui, sans-serif; background: #FFF8F0; color: #333; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { font-size: 22px; margin: 4px 0 2px; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 16px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tabs button { flex: 1; padding: 10px; border: 1px solid #E8D5C4; background: #fff; border-radius: 10px; font-size: 15px; cursor: pointer; }
+  .tabs button.active { background: #E07A3F; color: #fff; border-color: #E07A3F; }
+  .card { background: #fff; border: 1px solid #F0E2D4; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 16px; margin: 0 0 10px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .row label { font-size: 13px; color: #888; width: 100%; }
+  select { flex: 1; min-width: 120px; padding: 9px; border: 1px solid #DDD; border-radius: 8px; font-size: 15px; background: #fff; }
+  .big { font-family: 'Noto Sans Thai', 'Noto Sans SC', sans-serif; font-size: 44px; font-weight: 700; text-align: center; margin: 8px 0; }
+  .answer { text-align: center; font-size: 20px; font-weight: 700; color: #C75B21; }
+  .explain { text-align: center; color: #666; font-size: 14px; margin-top: 6px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 6px; }
+  th, td { border-bottom: 1px solid #F0E2D4; padding: 7px 4px; text-align: center; }
+  th { color: #888; font-weight: 500; }
+  td.thai { font-family: 'Noto Sans Thai', sans-serif; font-size: 19px; }
+  td.thai-words { font-family: 'Noto Sans Thai', sans-serif; font-size: 19px; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .opts button { padding: 12px; font-size: 16px; border: 1px solid #E8D5C4; background: #fff; border-radius: 10px; cursor: pointer; }
+  .opts button.correct { background: #E2F3E4; border-color: #6BBF73; }
+  .opts button.wrong { background: #FBE4E0; border-color: #E07A3F; }
+  .opts button:disabled { opacity: 0.9; cursor: default; }
+  .btn { display: block; width: 100%; padding: 12px; margin-top: 12px; background: #E07A3F; color: #fff; border: 0; border-radius: 10px; font-size: 16px; cursor: pointer; }
+  .btn.ghost { background: #fff; color: #C75B21; border: 1px solid #E8D5C4; }
+  .meta { text-align: center; color: #888; font-size: 13px; margin-top: 8px; }
+  .feedback { color: #2E7D32; font-weight: 700; text-align: center; font-size: 17px; margin: 8px 0; }
+  .feedback.bad { color: #C0392B; }
+  textarea { width: 100%; min-height: 64px; padding: 10px; border: 1px solid #DDD; border-radius: 8px; font-size: 14px; }
+  .wrong-list { font-size: 14px; line-height: 1.9; }
+  .note { font-size: 12.5px; color: #999; line-height: 1.7; }
+  .thai-text { font-family: 'Noto Sans Thai', 'Noto Sans SC', sans-serif; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>泰语声调小工具 · 内测版</h1>
+  <div class="sub">先查规则，再自测，还能听音辨声调。v1 只做单音节，声调按声母类别＋活死音节＋调号推导。</div>
+
+  <div class="tabs">
+    <button id="tabLearn" class="active" onclick="showTab('learn')">查规则</button>
+    <button id="tabQuiz" onclick="showTab('quiz')">自测</button>
+  </div>
+
+  <!-- 查规则 -->
+  <div id="panelLearn">
+    <div class="card">
+      <h2>规则查询</h2>
+      <div class="row"><label>声母类别</label>
+        <select id="selClass" onchange="updateChecker()">
+          <option value="mid">中辅音</option>
+          <option value="high">高辅音</option>
+          <option value="low">低辅音</option>
+          <option value="hLeading">ห นำ（ห＋低辅音，按高辅音算）</option>
+        </select>
+      </div>
+      <div class="row"><label>音节类型</label>
+        <select id="selType" onchange="updateChecker()">
+          <option value="live">活音节（长元音，或响音尾）</option>
+          <option value="deadShort">死音节（短元音）</option>
+          <option value="deadLong">死音节（长元音＋塞音尾）</option>
+        </select>
+      </div>
+      <div class="row"><label>元音</label>
+        <select id="selVowel" onchange="updateChecker()">
+          <option value="า">า</option>
+          <option value="ี">ี</option>
+          <option value="ู">ู</option>
+        </select>
+      </div>
+      <div class="row"><label>调号</label>
+        <select id="selMark" onchange="updateChecker()">
+          <option value="">无调号</option>
+          <option value="ek">่（ไม้เอก）</option>
+          <option value="tho">้（ไม้โท）</option>
+          <option value="tri">๊（ไม้ตรี）</option>
+          <option value="chat">๋（ไม้จัตวา）</option>
+        </select>
+      </div>
+      <div class="big" id="checkerSyllable">กา</div>
+      <div class="answer" id="checkerTone">中声 · สามัญ</div>
+      <div class="explain" id="checkerExplain"></div>
+      <button class="btn ghost" onclick="speak(document.getElementById('checkerSyllable').textContent)">🔊 朗读这个音节</button>
+      <div class="meta audio-status" id="audioStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>声调总表（活音节例词）</h2>
+      <table>
+        <tr><th>类别</th><th>无调号</th><th>่</th><th>้</th><th>๊</th><th>๋</th></tr>
+        <tr><td>中辅音</td><td class="thai">กา<br>中声</td><td class="thai">ก่า<br>低声</td><td class="thai">ก้า<br>降声</td><td class="thai">ก๊า<br>高声</td><td class="thai">ก๋า<br>升声</td></tr>
+        <tr><td>高辅音</td><td class="thai">ขา<br>升声</td><td class="thai">ข่า<br>低声</td><td class="thai">ข้า<br>降声</td><td>—</td><td>—</td></tr>
+        <tr><td>低辅音</td><td class="thai">คา<br>中声</td><td class="thai">ค่า<br>降声</td><td class="thai">ค้า<br>高声</td><td>—</td><td>—</td></tr>
+        <tr><td>ห นำ</td><td class="thai">หมา<br>升声</td><td class="thai">หม่า<br>低声</td><td class="thai">หม้า<br>降声</td><td>—</td><td>—</td></tr>
+      </table>
+      <div class="explain">高辅音、低辅音和 ห นำ只用无调号、่、้；๊、๋ 只出现在中辅音。</div>
+    </div>
+
+    <div class="card">
+      <h2>声母类别全表</h2>
+      <div class="explain thai-text" style="text-align:left">中辅音（9 个）：ก จ ฎ ฏ ด ต บ ป อ<br>高辅音（11 个）：ข ฃ ฉ ฐ ถ ผ ฝ ศ ษ ส ห<br>低辅音（24 个）：ค ฅ ฆ ง ช ซ ฌ ญ ฑ ฒ ณ ท ธ น พ ฟ ภ ม ย ร ล ว ฬ ฮ<br>ห นำ：ห＋响音（ง ญ น ม ย ร ล ว），按高辅音算，如 หมา、หนา。</div>
+    </div>
+
+    <div class="card">
+      <h2>常见词声调（每声调 2 个）</h2>
+      <table>
+        <tr><th>声调</th><th>例词（点词可朗读）</th></tr>
+        <tr><td>中声</td><td class="thai-words"><span style="cursor:pointer" onclick="speak('มา')">มา</span>（来） · <span style="cursor:pointer" onclick="speak('ไป')">ไป</span>（去） · <span style="cursor:pointer" onclick="speak('นอน')">นอน</span>（睡） · <span style="cursor:pointer" onclick="speak('ดู')">ดู</span>（看）</td></tr>
+        <tr><td>低声</td><td class="thai-words"><span style="cursor:pointer" onclick="speak('เก่า')">เก่า</span>（旧） · <span style="cursor:pointer" onclick="speak('ใหม่')">ใหม่</span>（新） · <span style="cursor:pointer" onclick="speak('เด็ก')">เด็ก</span>（小孩） · <span style="cursor:pointer" onclick="speak('ต่ำ')">ต่ำ</span>（低）</td></tr>
+        <tr><td>降声</td><td class="thai-words"><span style="cursor:pointer" onclick="speak('มาก')">มาก</span>（很） · <span style="cursor:pointer" onclick="speak('ค่า')">ค่า</span>（价值） · <span style="cursor:pointer" onclick="speak('ได้')">ได้</span>（可以） · <span style="cursor:pointer" onclick="speak('ข้าว')">ข้าว</span>（米饭）</td></tr>
+        <tr><td>高声</td><td class="thai-words"><span style="cursor:pointer" onclick="speak('รัก')">รัก</span>（爱） · <span style="cursor:pointer" onclick="speak('ค้า')">ค้า</span>（买卖） · <span style="cursor:pointer" onclick="speak('น้อย')">น้อย</span>（少） · <span style="cursor:pointer" onclick="speak('รู้')">รู้</span>（知道）</td></tr>
+        <tr><td>升声</td><td class="thai-words"><span style="cursor:pointer" onclick="speak('หมา')">หมา</span>（狗） · <span style="cursor:pointer" onclick="speak('ขา')">ขา</span>（腿） · <span style="cursor:pointer" onclick="speak('หนา')">หนา</span>（厚） · <span style="cursor:pointer" onclick="speak('หมู')">หมู</span>（猪肉）</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>五个声调的音高走势（示意）</h2>
+      <svg viewBox="0 0 320 150" width="100%" style="display:block">
+        <text x="8" y="24" font-size="13" fill="#333">中声</text>
+        <line x1="70" y1="20" x2="300" y2="20" stroke="#E07A3F" stroke-width="3" stroke-linecap="round"/>
+        <text x="8" y="48" font-size="13" fill="#333">低声</text>
+        <line x1="70" y1="48" x2="300" y2="52" stroke="#E07A3F" stroke-width="3" stroke-linecap="round"/>
+        <text x="8" y="72" font-size="13" fill="#333">降声</text>
+        <line x1="70" y1="60" x2="300" y2="76" stroke="#E07A3F" stroke-width="3" stroke-linecap="round"/>
+        <text x="8" y="96" font-size="13" fill="#333">高声</text>
+        <line x1="70" y1="88" x2="300" y2="84" stroke="#E07A3F" stroke-width="3" stroke-linecap="round"/>
+        <text x="8" y="120" font-size="13" fill="#333">升声</text>
+        <polyline points="70,120 185,124 300,112" fill="none" stroke="#E07A3F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="explain">音高走势为示意（五度标调法），非精确录音曲线；点声调总表里的例词可听实际读音。</div>
+    </div>
+
+    <div class="card">
+      <h2>死音节例词（无调号）</h2>
+      <table>
+        <tr><th>类别</th><th>短元音</th><th>长元音＋塞音尾</th></tr>
+        <tr><td>中辅音</td><td class="thai">กัด<br>低声</td><td class="thai">กาด<br>降声</td></tr>
+        <tr><td>高辅音</td><td class="thai">ขัด<br>低声</td><td class="thai">ขาด<br>低声</td></tr>
+        <tr><td>低辅音</td><td class="thai">คัด<br>高声</td><td class="thai">คาด<br>降声</td></tr>
+      </table>
+      <div class="explain">死音节＝短元音，或以塞音（ก ด บ）结尾。无调号时，中辅音短变低声、长变降声；高辅音都是低声；低辅音短变高声、长变降声。</div>
+    </div>
+  </div>
+
+  <!-- 自测 -->
+  <div id="panelQuiz" class="hidden">
+    <div class="card" id="quizCard">
+      <div class="row"><label>自测模式</label>
+        <select id="selMode" onchange="startQuiz()">
+          <option value="tone">声调自测</option>
+          <option value="listen">听音辨声调</option>
+          <option value="class">声母类别自测</option>
+          <option value="type">活死音节自测</option>
+        </select>
+      </div>
+      <div class="meta" id="quizMeta">第 1 / 10 题 · 得分 0</div>
+      <div class="big" id="quizSyllable">กา</div>
+      <div class="explain" id="quizPrompt">这个音节是第几声？</div>
+      <button class="btn hidden" id="playBtn" onclick="playCurrent()">🔊 播放读音</button>
+      <div class="meta audio-status" id="quizAudioStatus"></div>
+      <div class="opts" id="quizOpts"></div>
+      <div id="quizFeedback" class="hidden">
+        <div id="quizResult" class="feedback"></div>
+        <div id="quizExplain" class="explain"></div>
+        <button class="btn" onclick="nextQuestion()">下一题</button>
+      </div>
+      <button class="btn ghost" onclick="startQuiz()">重新开始一轮</button>
+    </div>
+
+    <div class="card hidden" id="resultCard">
+      <h2>本轮结束</h2>
+      <div class="big" id="finalScore"></div>
+      <div class="wrong-list" id="wrongList"></div>
+      <div class="row"><label>内测反馈（可选填，会一起复制）</label></div>
+      <textarea id="feedbackText" placeholder="哪里难用、哪里错了、想加什么功能，都可以写在这里"></textarea>
+      <button class="btn" onclick="copyResult()">复制测试结果</button>
+      <div class="meta" id="copyMeta"></div>
+      <button class="btn ghost hidden" id="retryBtn" onclick="startRetry()">只重练错题</button>
+      <button class="btn ghost" onclick="startQuiz()">再来一轮</button>
+    </div>
+    <div class="card" id="historyCard">
+      <h2>历史错题（只保存在本设备）</h2>
+      <div class="wrong-list" id="historyList"></div>
+      <button class="btn ghost" id="historyBtn" onclick="startHistoryRetry()">练历史错题</button>
+      <button class="btn ghost" onclick="clearHistory()">清空历史错题</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="note">v1 范围说明：单音节，活音节与长元音死音节用 า/ี/ู，短元音死音节用 ั/ิ/ุ，暂不含前置元音（เ แ โ）；ห นำ只做 ห＋低辅音响音。音频用设备自带的泰语语音朗读，个别设备需先在系统设置里安装泰语语音。历史错题只保存在本设备，不上传。自测里的音节用于练声调，不一定是真实单词；常见词例词均为真实单词。规则如有疑问，以课本为准，欢迎在反馈里指出。</div>
+  </div>
+</div>
+
+<script>
+// ---------- 声调规则引擎（可被 Node 单独校验） ----------
+const TONE_ZH = { mid: '中声', low: '低声', falling: '降声', high: '高声', rising: '升声' };
+const TONE_TH = { mid: 'สามัญ', low: 'เอก', falling: 'โท', high: 'ตรี', rising: 'จัตวา' };
+const TABLE = {
+  mid: {
+    live:      { '': 'mid', ek: 'low', tho: 'falling', tri: 'high', chat: 'rising' },
+    deadShort: { '': 'low', ek: 'low', tho: 'falling', tri: 'high', chat: 'rising' },
+    deadLong:  { '': 'falling', ek: 'low', tho: 'falling', tri: 'high', chat: 'rising' }
+  },
+  high: {
+    live:      { '': 'rising', ek: 'low', tho: 'falling' },
+    deadShort: { '': 'low', ek: 'low', tho: 'falling' },
+    deadLong:  { '': 'low', ek: 'low', tho: 'falling' }
+  },
+  low: {
+    live:      { '': 'mid', ek: 'falling', tho: 'high' },
+    deadShort: { '': 'high', ek: 'falling', tho: 'high' },
+    deadLong:  { '': 'falling', ek: 'falling', tho: 'high' }
+  }
+};
+const MARKS = { '': '', ek: '่', tho: '้', tri: '๊', chat: '๋' };
+const MARK_ZH = { '': '无调号', ek: '่', tho: '้', tri: '๊', chat: '๋' };
+const CLASS_ZH = { mid: '中辅音', high: '高辅音', low: '低辅音', hLeading: 'ห นำ（按高辅音算）' };
+const TYPE_ZH = { live: '活音节', deadShort: '死音节（短元音）', deadLong: '死音节（长元音＋塞音尾）' };
+const CONS = {
+  mid: ['ก', 'จ', 'ฎ', 'ฏ', 'ด', 'ต', 'บ', 'ป', 'อ'],
+  high: ['ข', 'ฃ', 'ฉ', 'ฐ', 'ถ', 'ผ', 'ฝ', 'ศ', 'ษ', 'ส', 'ห'],
+  low: ['ค', 'ฅ', 'ฆ', 'ง', 'ช', 'ซ', 'ฌ', 'ญ', 'ฑ', 'ฒ', 'ณ', 'ท', 'ธ', 'น', 'พ', 'ฟ', 'ภ', 'ม', 'ย', 'ร', 'ล', 'ว', 'ฬ', 'ฮ'],
+  hLeading: ['ง', 'ญ', 'น', 'ม', 'ย', 'ร', 'ล', 'ว']
+};
+const VALID_MARKS = { mid: ['', 'ek', 'tho', 'tri', 'chat'], high: ['', 'ek', 'tho'], low: ['', 'ek', 'tho'], hLeading: ['', 'ek', 'tho'] };
+const EXAMPLE_CONS = { mid: 'ก', high: 'ข', low: 'ค', hLeading: 'ม' };
+
+function effClass(cls) { return cls === 'hLeading' ? 'high' : cls; }
+function toneOf(cls, type, mark) { return TABLE[effClass(cls)][type][mark]; }
+function toneLabel(t) { return TONE_ZH[t] + ' · ' + TONE_TH[t]; }
+function buildSyllable(cls, type, mark, cons, stop, vowel) {
+  const pre = cls === 'hLeading' ? 'ห' : '';
+  const m = MARKS[mark];
+  const v = vowel || (type === 'deadShort' ? 'ั' : 'า');
+  const above = ['ี', 'ู', 'ิ', 'ุ', 'ั'].includes(v);
+  if (type === 'live') return above ? pre + cons + v + m : pre + cons + m + v;
+  if (type === 'deadShort') return pre + cons + v + m + (stop || 'ด');
+  return above ? pre + cons + v + m + (stop || 'ด') : pre + cons + m + v + (stop || 'ด');
+}
+function ruleText(cls, type, mark, syllable) {
+  return syllable + '：' + CLASS_ZH[cls] + ' · ' + TYPE_ZH[type] + ' · ' + MARK_ZH[mark] + ' → ' + toneLabel(toneOf(cls, type, mark));
+}
+
+// ---------- 界面（仅浏览器环境执行） ----------
+if (typeof document !== 'undefined') {
+  const TONE_OPTIONS = ['mid', 'low', 'falling', 'high', 'rising'];
+  let qIndex = 0, score = 0, lastSyllable = '', current = null, wrong = []; let retryList = null, roundTotal = 10;
+
+  function showTab(name) {
+    document.getElementById('panelLearn').classList.toggle('hidden', name !== 'learn');
+    document.getElementById('panelQuiz').classList.toggle('hidden', name !== 'quiz');
+    document.getElementById('tabLearn').classList.toggle('active', name === 'learn');
+    document.getElementById('tabQuiz').classList.toggle('active', name === 'quiz');
+  }
+  function updateChecker() {
+    const cls = document.getElementById('selClass').value;
+    const type = document.getElementById('selType').value;
+    const markSel = document.getElementById('selMark');
+    Array.from(markSel.options).forEach(o => { o.disabled = !VALID_MARKS[cls].includes(o.value); });
+    if (!VALID_MARKS[cls].includes(markSel.value)) markSel.value = '';
+    const mark = markSel.value;
+    const vowelSel = document.getElementById('selVowel');
+    const want = type === 'deadShort' ? ['ั', 'ิ', 'ุ'] : ['า', 'ี', 'ู'];
+    const prev = vowelSel.value;
+    vowelSel.innerHTML = '';
+    want.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; vowelSel.appendChild(o); });
+    if (want.includes(prev)) vowelSel.value = prev;
+    const vowel = vowelSel.value;
+    const syllable = buildSyllable(cls, type, mark, EXAMPLE_CONS[cls], 'ด', vowel);
+    document.getElementById('checkerSyllable').textContent = syllable;
+    document.getElementById('checkerTone').textContent = toneLabel(toneOf(cls, type, mark));
+    document.getElementById('checkerExplain').textContent = ruleText(cls, type, mark, syllable);
+  }
+  function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function pickSyllableQuestion() {
+    const classes = ['mid', 'high', 'low', 'hLeading'];
+    let q;
+    do {
+      const cls = rand(classes);
+      const type = rand(['live', 'deadShort', 'deadLong']);
+      const mark = rand(VALID_MARKS[cls]);
+      const cons = rand(CONS[cls]);
+      const stop = rand(['ก', 'ด', 'บ']);
+      const vowel = type === 'deadShort' ? rand(['ั', 'ิ', 'ุ']) : rand(['า', 'ี', 'ู']);
+      q = { cls, type, mark, syllable: buildSyllable(cls, type, mark, cons, stop, vowel) };
+    } while (q.syllable === lastSyllable);
+    lastSyllable = q.syllable;
+    return q;
+  }
+  function pickQuestion(mode) {
+    if (mode === 'class') {
+      const all = [];
+      Object.keys(CONS).forEach(k => { if (k !== 'hLeading') CONS[k].forEach(c => all.push({ cons: c, cls: k })); });
+      const item = rand(all);
+      return { display: item.cons, options: [{ key: 'mid', label: '中辅音' }, { key: 'high', label: '高辅音' }, { key: 'low', label: '低辅音' }], answerKey: item.cls, explain: item.cons + ' 是' + CLASS_ZH[item.cls], prompt: '这个声母属于哪一类？' };
+    }
+    const q = pickSyllableQuestion();
+    if (mode === 'type') {
+      return { display: q.syllable, options: [{ key: 'live', label: '活音节' }, { key: 'dead', label: '死音节' }], answerKey: q.type === 'live' ? 'live' : 'dead', explain: ruleText(q.cls, q.type, q.mark, q.syllable), prompt: '这个音节是活音节还是死音节？' };
+    }
+    if (mode === 'listen') {
+      return { display: '🔊', listen: true, syllable: q.syllable, options: TONE_OPTIONS.map(t => ({ key: t, label: toneLabel(t) })), answerKey: toneOf(q.cls, q.type, q.mark), explain: ruleText(q.cls, q.type, q.mark, q.syllable), prompt: '仔细听，这个音节是第几声？' };
+    }
+    return { display: q.syllable, options: TONE_OPTIONS.map(t => ({ key: t, label: toneLabel(t) })), answerKey: toneOf(q.cls, q.type, q.mark), explain: ruleText(q.cls, q.type, q.mark, q.syllable), prompt: '这个音节是第几声？' };
+  }
+  function renderQuestion() {
+    document.getElementById('quizMeta').textContent = '第 ' + (qIndex + 1) + ' / ' + roundTotal + ' 题 · 得分 ' + score;
+    document.getElementById('quizSyllable').textContent = current.display;
+    document.getElementById('quizPrompt').textContent = current.prompt;
+    document.getElementById('quizFeedback').classList.add('hidden');
+    document.getElementById('playBtn').classList.toggle('hidden', !current.listen);
+    if (current.listen) speak(current.syllable);
+    const opts = document.getElementById('quizOpts');
+    opts.innerHTML = '';
+    current.options.forEach(o => {
+      const b = document.createElement('button');
+      b.textContent = o.label;
+      b.dataset.key = o.key;
+      b.onclick = () => answerQuestion(o.key, b);
+      opts.appendChild(b);
+    });
+  }
+  function answerQuestion(key, btn) {
+    Array.from(document.getElementById('quizOpts').children).forEach(b => { b.disabled = true; });
+    const ok = key === current.answerKey;
+    const res = document.getElementById('quizResult');
+    const correctLabel = current.options.find(o => o.key === current.answerKey).label;
+    if (ok) {
+      score++;
+      btn.classList.add('correct');
+      res.textContent = '答对了';
+      res.classList.remove('bad');
+    } else {
+      btn.classList.add('wrong');
+      Array.from(document.getElementById('quizOpts').children).forEach(b => {
+        if (b.textContent === correctLabel) b.classList.add('correct');
+      });
+      wrong.push(current);
+      res.textContent = '不对，正确答案是' + correctLabel;
+      res.classList.add('bad');
+    }
+    document.getElementById('quizExplain').textContent = current.explain;
+    document.getElementById('quizFeedback').classList.remove('hidden');
+  }
+  function nextQuestion() {
+    if (retryList) {
+      qIndex++;
+      if (qIndex >= retryList.length) { retryList = null; showResult(); return; }
+      current = retryList[qIndex];
+      renderQuestion();
+      return;
+    }
+    qIndex++;
+    if (qIndex >= 10) { showResult(); return; }
+    current = pickQuestion(document.getElementById('selMode').value);
+    renderQuestion();
+  }
+  function showResult() {
+    document.getElementById('quizCard').classList.add('hidden');
+    const rc = document.getElementById('resultCard');
+    rc.classList.remove('hidden');
+    document.getElementById('finalScore').textContent = score + ' / ' + roundTotal;
+    document.getElementById('wrongList').innerHTML = wrong.length === 0
+      ? '全对，没有错题。'
+      : '错题：<br>' + wrong.map(w => w.explain).join('<br>');
+    document.getElementById('copyMeta').textContent = '';
+    document.getElementById('retryBtn').style.display = wrong.length ? '' : 'none';
+    saveHistory();
+  }
+  function copyResult() {
+    const fb = document.getElementById('feedbackText').value.trim();
+    let text = '泰语声调小工具·测试结果：得分 ' + score + ' / 10';
+    if (wrong.length > 0) text += '；错题：' + wrong.map(w => w.explain).join('；');
+    if (fb) text += '；反馈：' + fb;
+    const done = () => { document.getElementById('copyMeta').textContent = '已复制，去发给做工具的人就行。'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text));
+    } else { fallbackCopy(text); }
+  }
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); document.getElementById('copyMeta').textContent = '已复制，去发给做工具的人就行。'; }
+    catch (e) { document.getElementById('copyMeta').textContent = '复制失败，请手动复制：' + text; }
+    document.body.removeChild(ta);
+  }
+  function startQuiz() {
+    qIndex = 0; score = 0; wrong = []; lastSyllable = ''; retryList = null; roundTotal = 10;
+    document.getElementById('quizCard').classList.remove('hidden');
+    document.getElementById('resultCard').classList.add('hidden');
+    current = pickQuestion(document.getElementById('selMode').value);
+    renderQuestion();
+  }
+  function speak(text) {
+    const setStatus = msg => { document.querySelectorAll('.audio-status').forEach(el => { el.textContent = msg; }); };
+    if (!('speechSynthesis' in window)) { setStatus('当前设备不支持语音朗读，请在系统设置里安装泰语语音后重试。'); return false; }
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'th-TH';
+      u.rate = 0.85;
+      const v = window.speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('th'));
+      if (v) u.voice = v;
+      window.speechSynthesis.speak(u);
+      setStatus('');
+      return true;
+    } catch (e) { setStatus('朗读失败，请再点一次。'); return false; }
+  }
+  function playCurrent() { if (current && current.syllable) speak(current.syllable); }
+  function startRetry() {
+    if (!wrong.length) return;
+    retryList = wrong.slice();
+    roundTotal = retryList.length;
+    qIndex = 0; score = 0; wrong = [];
+    document.getElementById('quizCard').classList.remove('hidden');
+    document.getElementById('resultCard').classList.add('hidden');
+    current = retryList[0];
+    renderQuestion();
+  }
+  function loadHistory() { try { return JSON.parse(localStorage.getItem('tone-wrong') || '[]'); } catch (e) { return []; } }
+  function saveHistory() {
+    try {
+      const old = loadHistory();
+      wrong.forEach(w => { if (!old.some(o => o.explain === w.explain)) old.push(w); });
+      localStorage.setItem('tone-wrong', JSON.stringify(old));
+    } catch (e) {}
+    renderHistory();
+  }
+  function renderHistory() {
+    const list = loadHistory();
+    document.getElementById('historyList').innerHTML = list.length === 0 ? '暂无历史错题。' : list.map(w => w.explain).join('<br>');
+    document.getElementById('historyBtn').style.display = list.length ? '' : 'none';
+  }
+  function clearHistory() { try { localStorage.removeItem('tone-wrong'); } catch (e) {} renderHistory(); }
+  function startHistoryRetry() {
+    const list = loadHistory();
+    if (!list.length) return;
+    retryList = list;
+    roundTotal = retryList.length;
+    qIndex = 0; score = 0; wrong = [];
+    document.getElementById('quizCard').classList.remove('hidden');
+    document.getElementById('resultCard').classList.add('hidden');
+    current = retryList[0];
+    renderQuestion();
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    updateChecker();
+    startQuiz();
+    renderHistory();
+    document.querySelectorAll('td.thai').forEach(td => { td.style.cursor = 'pointer'; td.onclick = () => speak(td.firstChild.textContent.trim()); });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  });
+  window.showTab = showTab;
+  window.updateChecker = updateChecker;
+  window.startQuiz = startQuiz;
+  window.nextQuestion = nextQuestion;
+  window.copyResult = copyResult;
+  window.speak = speak;
+  window.startRetry = startRetry;
+  window.playCurrent = playCurrent;
+  window.clearHistory = clearHistory;
+  window.startHistoryRetry = startHistoryRetry;
+}
+</script>
+</body>
+</html>
